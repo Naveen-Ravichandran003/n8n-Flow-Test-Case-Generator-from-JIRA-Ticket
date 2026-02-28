@@ -1,0 +1,283 @@
+{
+  "name": "Test Case Generator from JIRA Ticket",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -720,
+        -16
+      ],
+      "id": "846cdd90-4727-40a3-9eb5-06c800c078aa",
+      "name": "User Input",
+      "webhookId": "01512502-91c4-4160-b8dd-290e88c49cb4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=R – ROLE\n\nYou are a Senior QA Test Architect with 15+ years of experience in enterprise-grade functional test design.\n\nYou specialize in:\n\n- Converting user stories into structured test cases\n- Covering positive, negative, edge, and boundary scenarios\n- Writing reproducible test steps\n- Producing clean markdown-formatted documentation\n- Maintaining clarity, precision, and non-ambiguous expected results\n\nYou follow strict QA principles:\n- Clear preconditions\n- Numbered, reproducible steps\n- Deterministic expected results\n- No redundant scenarios\n- Professional QA terminology\n\n----------------------------------------------------------------\n\nI – INSTRUCTIONS\n\n1. Analyze the provided user story.\n2. Generate exactly 8 test cases.\n3. Ensure coverage of:\n   - Valid password reset flow\n   - Invalid/unregistered email\n   - Expired reset link after 24 hours\n   - Account lockout after 3 failed attempts\n   - Unlock after 30 minutes\n   - Special characters in email input\n   - Multiple reset requests within 24 hours\n   - Reuse of same reset link\n4. Steps must be clearly numbered.\n5. Use <br> for line breaks inside the Steps column.\n6. Expected Results must be concise and definitive.\n7. Do NOT provide explanations.\n8. Do NOT provide commentary outside the table.\n9. Output must strictly match the required markdown table structure.\n\n----------------------------------------------------------------\n\nC – CONTEXT\n\nUser Story:\n\"As a user, I should be able to reset my password using my registered email. The system should send a reset link valid for 24 hours. After 3 failed attempts, the account should be locked for 30 minutes.\"\n\nThe system includes:\n- Forgot Password option\n- Email input field\n- Reset link mechanism\n- 24-hour link validity\n- Failed attempt counter\n- 30-minute lockout mechanism\n\n----------------------------------------------------------------\n\nE – EXPECTED COVERAGE\n\nYou must include scenarios for:\n\n- Successful reset using registered email\n- Reset attempt using unregistered email\n- Expired reset link usage\n- Lockout after 3 failed attempts\n- Unlock after 30 minutes\n- Special character email handling\n- Multiple reset requests\n- Reuse of reset link\n\n----------------------------------------------------------------\n\nP – PARAMETERS\n\n- Total Test Cases: 8 (exactly)\n- Language: Professional QA terminology\n- No additional columns\n- No extra formatting\n- No assumptions beyond described behavior\n- No extra text outside the table\n\n----------------------------------------------------------------\n\nO – OUTPUT FORMAT (STRICT)\n\nReturn ONLY a valid JSON array.\n\nDo NOT include:\n- Markdown\n- Code blocks\n- Explanations\n- Headings\n- Any text before or after JSON\n- Any wrapper object (like \"TestCases\")\n\nThe response MUST be a raw JSON array.\n\nKeys must exactly match:\n\nTest Case ID\nTest Scenario\nTest Type\nPreconditions\nTest Steps\nExpected Result\nPriority\n\nIf the output is not strictly valid JSON, it is considered invalid.\n----------------------------------------------------------------\n\nT – TONE\n\nStructured.\nProfessional.\nPrecise.\nEnterprise QA standard.\nNo fluff.\nClear and deterministic.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -464,
+        -176
+      ],
+      "id": "314331b1-4b26-4efc-a77c-e0310b9467b2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        32
+      ],
+      "id": "501c4018-a113-42b1-b0c1-d90d0f607a0c",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "VMOw0aF4NuOCx7rf",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "issueKey": "KAN-229",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.jiraTool",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        32
+      ],
+      "id": "8f12c32d-c13f-4b62-91e5-aac2531e63e2",
+      "name": "Read Input from JIRA",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "3seRXY3YdcmFAmxz",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get AI output\nconst raw = $input.first().json.output;\n\n// Parse JSON (AI must return pure JSON array)\nconst data = JSON.parse(raw);\n\n// Convert each object to n8n format\nreturn data.map(item => ({\n  json: {\n    \"Test Case ID\": item[\"Test Case ID\"],\n    \"Test Scenario\": item[\"Test Scenario\"],\n    \"Test Type\": item[\"Test Type\"],\n    \"Preconditions\": item[\"Preconditions\"],\n    \"Test Steps\": item[\"Test Steps\"]?.replace(/<br>/g, \"\\n\"),\n    \"Expected Result\": item[\"Expected Result\"],\n    \"Priority\": item[\"Priority\"]\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        -176
+      ],
+      "id": "53ccee57-486a-443b-b489-fab940ab39c3",
+      "name": "Output Format"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1ueb3IgfxtxqjXCwCtSmCpJFNjlXHTZXLmvoGp1Km-zw/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ueb3IgfxtxqjXCwCtSmCpJFNjlXHTZXLmvoGp1Km-zw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "output"
+          ],
+          "schema": [
+            {
+              "id": "Test Case ID",
+              "displayName": "Test Case ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Scenario",
+              "displayName": "Test Scenario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Type",
+              "displayName": "Test Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preconditions",
+              "displayName": "Preconditions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Steps",
+              "displayName": "Test Steps",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Expected Result",
+              "displayName": "Expected Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        -176
+      ],
+      "id": "2a966f97-1081-4996-be55-e4a14f0d6ed4",
+      "name": "Mapping output in Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4dnvW2dJl8fsqdwu",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "User Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Input from JIRA": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Output Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Format": {
+      "main": [
+        [
+          {
+            "node": "Mapping output in Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b1f83b24-a5d6-46fb-9d31-a9ca57962d80",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dcbdc63fa236e8240b07e16e65552f69b0dc57cb7d8df12a282b48a7e081d3c5"
+  },
+  "id": "t1FX9VvVA1JShHVe",
+  "tags": []
+}
